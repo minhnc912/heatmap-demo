@@ -1,78 +1,62 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import h337 from "heatmap.js";
 import Map from "./map.jpg";
 
 function App() {
-    const dataPoint = [
-        { x: 0, y: 0 },
-        { x: 20, y: 50 },
-        { x: 50, y: 200 },
-        { x: 200, y: 500 },
-        { x: 30, y: 400 },
-        { x: 200, y: 300 },
-        { x: 800, y: 200 },
-        { x: 1300, y: 50 },
-    ];
+    const mapRef = useRef(null);
+    const heatmapInstanceRef = useRef(null);
 
     useEffect(() => {
-        var heatmapInstance = h337.create({
-            container: document.querySelector(".map"),
+        createHeatmap();
+        getData();
+    }, []);
+
+    const createHeatmap = () => {
+        const container = document.querySelector(".map");
+        const instance = h337.create({
+            container,
             radius: 50,
         });
+        heatmapInstanceRef.current = instance;
+    };
 
-        // fetch(dataPoint)
-        //     .then((res) => res.json())
-        //     .then((data) => console.log(data));
+    const getData = () => {
+        fetch("http://localhost:3000/heatPoint")
+            .then((res) => res.json())
+            .then((data) => {
+                const heatmapInstance = heatmapInstanceRef.current;
+                if (heatmapInstance && data.length > 0) {
+                    const map = document.querySelector(".map img");
+                    const oldWidth = map.naturalWidth;
+                    const oldHeight = map.naturalHeight;
+                    const newWidth = mapRef.current.clientWidth;
+                    const newHeight = mapRef.current.clientHeight;
+                   //
+                    const newData = data.map(({ x, y, value }) => ({
+                        x: Number(((x * newWidth) / oldWidth).toFixed(0)),
+                        y: Number(((y * newHeight) / oldHeight).toFixed(0)),
+                        value,
+                    }));
 
-        // document.querySelector(".map").onclick = function (ev) {
-        //     heatmapInstance.addData({
-        //         x: ev.layerX,
-        //         y: ev.layerY,
-        //         value: 1,
-        //     });
-        // };
+                    heatmapInstance.setData({ data: newData });
+                }
+            });
+    };
 
-        var points = [];
-        var max = 0;
-        var width = window.innerWidth;
-        var height = window.innerHeight;
-        var len = 10;
-
-        while (len--) {
-            var val = Math.floor(Math.random() * 100);
-            console.log(val);
-            max = Math.max(max, val);
-            console.log(max);
-            var point = {
-                x: Math.floor(Math.random() * width),
-                y: Math.floor(Math.random() * height),
-                value: val,
-            };
-            points.push(point);
+    window.onresize = () => {
+        const heatmapInstance = heatmapInstanceRef.current;
+        if (heatmapInstance) {
+            heatmapInstance.setData({ data: [] });
         }
-
-        var data = {
-            max: max,
-            data: points,
-        };
-        heatmapInstance.setData(data);
-    });
-
-    const dataRerender = () => {
-        window.location.reload();
+        getData();
     };
 
     return (
         <div className="App">
             <div className="map">
-                <img
-                    src={Map}
-                    alt="map"
-                    style={{ width: "100%", height: "90vh" }}
-                />
+                <img src={Map} alt="map" ref={mapRef} />
             </div>
-            <button onClick={dataRerender}>Refresh Page</button>
         </div>
     );
 }
