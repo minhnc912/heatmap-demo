@@ -6,17 +6,24 @@ import Map from "./map.jpg";
 function App() {
     const mapRef = useRef(null);
     const heatmapInstanceRef = useRef(null);
+    const [isImageLoaded, setIsImageLoaded] = useState(false);
 
     useEffect(() => {
         createHeatmap();
-        getData();
-    }, []);
+        if (isImageLoaded) {
+            getData();
+        }
+    }, [isImageLoaded]);
+
+    const handleImageLoad = () => {
+        setIsImageLoaded(true);
+    };
 
     const createHeatmap = () => {
         const container = document.querySelector(".map");
         const instance = h337.create({
             container,
-            radius: 50,
+            radius: 40,
         });
         heatmapInstanceRef.current = instance;
     };
@@ -32,13 +39,12 @@ function App() {
                     const oldHeight = map.naturalHeight;
                     const newWidth = mapRef.current.clientWidth;
                     const newHeight = mapRef.current.clientHeight;
-                   //
+                    ///
                     const newData = data.map(({ x, y, value }) => ({
                         x: Number(((x * newWidth) / oldWidth).toFixed(0)),
                         y: Number(((y * newHeight) / oldHeight).toFixed(0)),
                         value,
                     }));
-
                     heatmapInstance.setData({ data: newData });
                 }
             });
@@ -55,7 +61,12 @@ function App() {
     return (
         <div className="App">
             <div className="map">
-                <img src={Map} alt="map" ref={mapRef} />
+                <img
+                    src={Map}
+                    alt="map"
+                    ref={mapRef}
+                    onLoad={handleImageLoad}
+                />
             </div>
         </div>
     );
